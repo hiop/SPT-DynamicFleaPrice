@@ -43,6 +43,10 @@ public class RagfairControllerOverride(ISptLogger<RagfairController> logger,
     DynamicFleaPrice dynamicFleaPrice
     ) : RagfairController(logger, timeUtil, jsonUtil, httpResponseUtil, eventOutputHolder, ragfairServer, itemHelper, inventoryHelper, ragfairSellHelper, handbookHelper, profileHelper, paymentHelper, ragfairHelper, ragfairSortHelper, ragfairOfferHelper, traderHelper, databaseService, localisationService, ragfairTaxService, ragfairOfferService, paymentService, ragfairPriceService, ragfairOfferGenerator, configServer)
 {
+    /**
+     * Override.
+     * Check FIR offer to flea from player
+     */
     public override ItemEventRouterResponse AddPlayerOffer(PmcData pmcData, AddOfferRequestData offerRequest, MongoId sessionID)
     {
         

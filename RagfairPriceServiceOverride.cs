@@ -35,6 +35,10 @@ public class RagfairPriceServiceOverride(
     serverLocalisationService, 
     configServer)
 {
+    /**
+     * Override.
+     * Adds a multiplier to items when generating an offer on the flea
+     */
     public override double GetDynamicOfferPriceForOffer(IEnumerable<Item> offerItems, MongoId desiredCurrency, bool isPackOffer)
     {
         // Price to return.

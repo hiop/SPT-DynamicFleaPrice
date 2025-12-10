@@ -18,6 +18,9 @@ public class DynamicFleaPrice(
     private DynamicFleaPriceData? _data;
     private DynamicFleaPriceConfig? _config;
 
+    /**
+     * Get item multiplier ITEM + CATEGORY multiplier
+     */
     public double GetItemMultiplier(MongoId template)
     {
         double itemMultiplier = 1;
@@ -77,6 +80,9 @@ public class DynamicFleaPrice(
         return categoryMultiplier;
     }
 
+    /**
+     * Increase counter for item (item and ctegory counters)
+     */
     public void AddItemOrIncreaseCount(MongoId template, int? count)
     {
         AddItemOrIncreaseItemCount(template, count);
@@ -96,7 +102,6 @@ public class DynamicFleaPrice(
     {
         if (_data == null)
         {
-            logger.Error("flea dynamic data is not init");
             return;
         }
 
@@ -116,7 +121,6 @@ public class DynamicFleaPrice(
     {
         if (_data == null)
         {
-            logger.Error("flea dynamic data is not init");
             return;
         }
 
@@ -135,6 +139,7 @@ public class DynamicFleaPrice(
     public void UpdateCounterByElapsedTime()
     {
         if (_data == null) return;
+        
         _data.ItemPurchased = _data.ItemPurchased.ToDictionary(
             kvp => kvp.Key,
             kvp =>
@@ -171,7 +176,10 @@ public class DynamicFleaPrice(
 
         SaveDynamicFleaData();
     }
-
+    
+    /**
+     * Save counters data to json file
+     */
     public void SaveDynamicFleaData()
     {
         try
@@ -190,6 +198,9 @@ public class DynamicFleaPrice(
         }
     }
 
+    /**
+     * Load counters data from json
+     */
     public void LoadDynamicFleaData()
     {
         try
@@ -216,7 +227,10 @@ public class DynamicFleaPrice(
             };
         }
     }
-
+    
+    /**
+     * Load config or create new one with default value
+     */
     public void LoadDynamicFleaConfig()
     {
         try

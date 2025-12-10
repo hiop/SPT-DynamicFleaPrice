@@ -1,6 +1,7 @@
 ﻿using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Callbacks;
 using SPTarkov.Server.Core.Controllers;
+using SPTarkov.Server.Core.Extensions;
 using SPTarkov.Server.Core.Helpers;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common;
@@ -33,15 +34,20 @@ public class TradeControllerOverride(
     DynamicFleaPrice dynamicFleaPrice
     ) : TradeController(logger, databaseService, eventOutputHolder, tradeHelper, timeUtil, randomUtil, itemHelper, ragfairOfferHelper, ragfairServer, httpResponseUtil, serverLocalisationService, mailSendService, configServer){
     
-    
+    /**
+     * Override.
+     * We need to understand what item the player bought
+     */
     public override ItemEventRouterResponse ConfirmRagfairTrading(PmcData pmcData, ProcessRagfairTradeRequestData request,
         MongoId sessionID)
     {
         foreach (var requestOffer in request.Offers)
         {
             if(requestOffer.Id == null) continue;
-            
             var offerItem = ragfairServer.GetOffer(requestOffer.Id);
+            
+            // if trader offer don't increase counter
+            if(offerItem.IsTraderOffer()) continue;
             
             if(offerItem == null || offerItem.Items == null) continue;
                 
