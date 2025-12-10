@@ -6,6 +6,7 @@
   // But why? Because dynamic pricing is abusive. You can buy the items you need, wait for the price to rise, 
   // and then sell them all in bulk. PROFIT!!!
   "onlyFoundInRaidForFleaOffers": true,
+  
   // ---
   // Decrease settings
   // ---
@@ -13,7 +14,7 @@
   //	Every time a player buys an item from the flea market, the item's counter and its category will be increased.
   //	Every time the timer expires, the counters (items and categories) are reduced.
   //		Timer duration  is configured via the "decreaseOfPurchasePeriod" value.
-  //		Counters reduced by percengate of their value. Percentage is configured via the "decreaseOfPurchasePeriod" value.
+  //		Counters reduced by percentage of their value. Percentage is configured via the "decreaseOfPurchasePeriod" value.
   // 	Counters of items and category here: "SPT/user/mods/DynamicFleaPrice/Data/DynamicFleaPriceData.json"
   
   // Percentage reduction of counters values
@@ -22,7 +23,7 @@
   
   // The time that must pass before the counters are decremented again.
   // Value in seconds (if you want 10 minutes = then value will be 600)
-  "decreaseOfPurchasePeriod": 10,
+  "decreaseOfPurchasePeriod": 600,
   
   // ---
   // Items and Item Categories counter settings
@@ -32,7 +33,7 @@
   // 	The multiplier value is calculated using the formula:
   // 	ITEM_MULTIPLIER + CATEGORY_MULTIPLIER
   //	
-  // 	If the values in ("increaseMultiplierPerItem", "increaseMultiplierPerItemCategory") ​​are not configured,
+  // 	If the values in ("increaseMultiplierPerItem", "increaseMultiplierPerItemCategory") are not configured,
   //	then the multiplier will always be equal to 1.
   
   // Price multiplier for each item purchased
