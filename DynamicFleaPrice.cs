@@ -94,8 +94,6 @@ public class DynamicFleaPrice(
         {
             AddItemOrIncreaseItemCategoryCount(category, count);
         }
-
-        UpdateCounterByElapsedTime();
     }
 
     private void AddItemOrIncreaseItemCount(MongoId template, int? count)
@@ -136,7 +134,10 @@ public class DynamicFleaPrice(
         }
     }
 
-    public void UpdateCounterByElapsedTime()
+    /**
+     * Decreases counters (items, categories) depending on the config
+     */
+    public void DecreaseCounters()
     {
         if (_data == null) return;
         

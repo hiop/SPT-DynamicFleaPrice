@@ -46,6 +46,8 @@ public class TradeControllerOverride(
             if(requestOffer.Id == null) continue;
             var offerItem = ragfairServer.GetOffer(requestOffer.Id);
             
+            if(offerItem == null) continue;
+            
             // if trader offer don't increase counter
             if(offerItem.IsTraderOffer()) continue;
             

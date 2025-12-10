@@ -13,7 +13,7 @@ public record ModMetadata : AbstractModMetadata
     public override string Name { get; init; } = "DynamicFleaPrice";
     public override string Author { get; init; } = "HioP";
     public override List<string>? Contributors { get; init; }
-    public override Version Version { get; init; } = new("0.0.1");
+    public override Version Version { get; init; } = new("0.0.2");
     public override Range SptVersion { get; init; } = new("~4.0.0");
     
     
@@ -50,7 +50,7 @@ public class DynamicFleaPriceOnLoad(
                 Thread.Sleep((int)(dynamicFleaPrice.GetDecreaseOfPurchasePeriod() * 1000)!);
                 try
                 {
-                    dynamicFleaPrice.UpdateCounterByElapsedTime();
+                    dynamicFleaPrice.DecreaseCounters();
                 }
                 catch (Exception ex)
                 {
@@ -62,6 +62,5 @@ public class DynamicFleaPriceOnLoad(
         updateCounterByElapsedTimeTask.Start();
         
         return Task.CompletedTask;
-        //return;
     }
 }
