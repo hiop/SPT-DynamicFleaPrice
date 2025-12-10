@@ -27,14 +27,6 @@
     <ModsDirectoryPath>$(SPTPath)\user\mods\$(MSBuildProjectName)</ModsDirectoryPath>
   </PropertyGroup>
 
-  <Target Name="CopyToSPT" AfterTargets="AfterBuild" Condition="'$(SPTPath)' != ''">
-    <Message Importance="high" Text="Copying mods to $(ModsDirectoryPath)" />
-    <ItemGroup>
-      <FilesToCopy Include="$(OutputPath)$(TargetName)$(TargetExt)" />
-      <FilesToCopy Include="$(OutputPath)$(TargetName).pdb" />
-    </ItemGroup>
-    <Copy SourceFiles="@(FilesToCopy)" DestinationFolder="$(ModsDirectoryPath)" ContinueOnError="false" />
-    <Message Text="Files copied" />
-  </Target>
+
 
 </Project>
