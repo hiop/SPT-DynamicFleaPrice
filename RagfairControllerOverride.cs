@@ -7,6 +7,7 @@ using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common;
 using SPTarkov.Server.Core.Models.Eft.ItemEvent;
 using SPTarkov.Server.Core.Models.Eft.Ragfair;
+using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Routers;
 using SPTarkov.Server.Core.Servers;
@@ -16,7 +17,8 @@ using SPTarkov.Server.Core.Utils;
 namespace DynamicFleaNamespace;
 
 [Injectable]
-public class RagfairControllerOverride(ISptLogger<RagfairController> logger,
+public class RagfairControllerOverride(
+    ISptLogger<RagfairController> logger,
     TimeUtil timeUtil,
     JsonUtil jsonUtil,
     HttpResponseUtil httpResponseUtil,
@@ -47,26 +49,56 @@ public class RagfairControllerOverride(ISptLogger<RagfairController> logger,
      * Override.
      * Check FIR offer to flea from player
      */
-    public override ItemEventRouterResponse AddPlayerOffer(PmcData pmcData, AddOfferRequestData offerRequest, MongoId sessionID)
+    public override ItemEventRouterResponse AddPlayerOffer(
+        PmcData pmcData,
+        AddOfferRequestData offerRequest,
+        MongoId sessionID
+    )
     {
         
         var inventoryItemsToSell = GetItemsToListOnFleaFromInventory(pmcData, offerRequest.Items);
-        foreach (var items in inventoryItemsToSell.Items)
+        
+        foreach (var items in inventoryItemsToSell.Items ?? [])
         {
             foreach (var item in items)
             {
-                if (item.Upd.SpawnedInSession.Equals(false))
+                if (item.Upd == null || item.Upd.SpawnedInSession.Equals(false))
                 {
-                    var output = eventOutputHolder.GetOutput(sessionID);
-                    eventOutputHolder.GetOutput(sessionID);
                     if (dynamicFleaPrice.GetOnlyFoundInRaidForFleaOffers())
                     {
-                        return null;
+                        // This may not return any errors to the client, but at least I'm not returning null now.
+                        var warning = new Warning
+                        {
+                            ErrorMessage = "Only FIR items available on flea",
+                            Index = 0,
+                            Code = BackendErrorCodes.RagfairUnavailable
+                        };
+                        return new ItemEventRouterResponse()
+                        {
+                            Warnings = [warning]
+                        };
                     }
                 }
             }
         }
-        
+
+
         return base.AddPlayerOffer(pmcData, offerRequest, sessionID);
+    }
+
+    public override void Update()
+    {
+        foreach (var (sessionId, profile) in profileHelper.GetProfiles())
+        {
+            // Check profile is capable of creating offers
+            var pmcProfile = profile?.CharacterData?.PmcData;
+            if (
+                pmcProfile?.RagfairInfo is not null
+                && pmcProfile?.Info?.Level >= databaseService.GetGlobals().Configuration.RagFair.MinUserLevel
+            )
+            {
+                ragfairOfferHelper.ProcessOffersOnProfile(sessionId);
+            }
+        };
     }
 }

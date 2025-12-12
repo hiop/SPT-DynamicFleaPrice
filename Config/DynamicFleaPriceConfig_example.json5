@@ -8,25 +8,45 @@
   "onlyFoundInRaidForFleaOffers": true,
   
   // ---
-  // Decrease settings
+  // Update counters settings
   // ---
   // Explanation:
   //	Every time a player buys an item from the flea market, the item's counter and its category will be increased.
-  //	Every time the timer expires, the counters (items and categories) are reduced.
-  //		Timer duration  is configured via the "decreaseOfPurchasePeriod" value.
-  //		Counters reduced by percentage of their value. Percentage is configured via the "decreaseOfPurchasePeriod" value.
+  //	Every time a player sell an item from the flea market, the item's counter and its category will be decreased.
+  //	Every time the timer expires, the counters (items and categories) are reduced or regenerate.
+  //		Timer duration is configured via the "updateCountersPeriod" value.
   // 	Counters of items and category here: "SPT/user/mods/DynamicFleaPrice/Data/DynamicFleaPriceData.json"
+  //    This file will appear after first sell/buy on flea!
   
-  // Percentage reduction of counters values
-  // value range 1 - 100, 	
-  "decreaseOfPurchasePercentage": 1,
+  // The percentage to decrease counters if their values are above 0
+  // value range 0 - 100, if the value is 0, then the counters will not decrease.
+  "decreaseCountersPercentage": 1,
+  
+  // The percentage of counter regeneration if their values are below 0
+  // value range 0 - 100, if the value is 0, then the counters will not regenerate. 	
+  "regenerateCountersPercentage": 1,
   
   // The time that must pass before the counters are decremented again.
   // Value in seconds (if you want 10 minutes = then value will be 600)
-  "decreaseOfPurchasePeriod": 600,
+  "updateCountersPeriod": 600,
+
+  // ---
+  // Counter multiplier
+  // ---
+  // Explanation:
+  //    When a player sell/buy items at the flea market, the counter is increased/decrease by the number of items purchased/selled.
+  //    The settings below will help you change this value.
+
+  // When player buy item from flea, then increase counters value by N * this multiplier (where N - offer item count)
+  // Affect to both item and category counters
+  "increaseCounterBuyMultiplier": 1,
+  
+  // When player sell item from flea, then decrease counters value by N * this multiplier (where N - offer item count)
+  // Affect to both item and category counters
+  "decreaseCounterSellMultiplier": 5,
   
   // ---
-  // Items and Item Categories counter settings
+  // Items and Item Categories flea price multiplier
   // ---
   // Explanation:
   //	Every time a flea market generates an offer, the price is multiplied by a certain value.
@@ -35,6 +55,10 @@
   //	
   // 	If the values in ("increaseMultiplierPerItem", "increaseMultiplierPerItemCategory") are not configured,
   //	then the multiplier will always be equal to 1.
+  //    
+  //    The counter value may drop below 0. Accordingly, the multiplier will also have a minus sign.
+  //    The price will not be lowered below the price at which traders buy.
+  //    Any modded items: may be issues. The developer needs to properly configure item price values.
   
   // Price multiplier for each item purchased
   // The item id can be found on the website https://db.sp-tarkov.com/search/ (root.item._id)
@@ -42,11 +66,15 @@
 	// Example:
 	// Random-access memory
 	// For each VRAM purchased the price for the next generated offers will increase by 5 times for VRAM
-    "57347baf24597738002c6178": 5,
+    // "57347baf24597738002c6178": 5,
+    
+    // More category and items here:
+    // RU https://github.com/hiop/SPT-DynamicFleaPrice/blob/master/Config/SPT-407-CategoryAndItem-Ru.txt
+    // EN https://github.com/hiop/SPT-DynamicFleaPrice/blob/master/Config/SPT-407-CategoryAndItem-En.txt
   },
   
   // Item price multiplier for each item purchased in this category
-  // The category id can be found on the website https://db.sp-tarkov.com/search/ (root.item._parent)
+  // The category id can be found on the website https://db.sp-tarkov.com/search/ (root.handbook.ParentId)
   "increaseMultiplierPerItemCategory": {
 	// Example:
 	// Ammo category.
@@ -55,5 +83,77 @@
 	// 10 000 * 0.00065 = 6,5
 	// The price for the next generated offers for ALL AMMO will be 6.5 times higher
 	"5b47574386f77428ca22b33b": 0.00065,
+    
+    // Category ids:
+    // "5b5f78fc86f77409407a7f90" //Assault rifles
+    // "5b47574386f77428ca22b33c" //Ammo packs
+    // "5c518ec986f7743b68682ce2" //Mechanical keys
+    // "5b5f792486f77447ed5636b3" //Pistols
+    // "5b5f7a2386f774093f2ed3c4" //Throwables
+    // "5b5f754a86f774094242f19b" //Magazines
+    // "5b47574386f77428ca22b335" //Drinks
+    // "5b47574386f77428ca22b336" //Food
+    // "5b5f737886f774093e6cb4fb" //Tactical combo devices
+    // "5b5f7a0886f77409407a7f96" //Melee weapons
+    // "5b5f794b86f77409407a7f92" //Shotguns
+    // "5b5f724c86f774093f2ecf15" //Flashhiders & brakes
+    // "5b5f740a86f77447ec5d7706" //Assault scopes
+    // "5b5f6f8786f77447ed563642" //Tactical rigs
+    // "5b5f6f6c86f774093f2ecf0b" //Backpacks
+    // "5b47574386f77428ca22b339" //Injury treatment
+    // "5b47574386f77428ca22b337" //Pills
+    // "5b47574386f77428ca22b33a" //Injectors
+    // "5b47574386f77428ca22b338" //Medkits
+    // "5b47574386f77428ca22b345" //Special equipment
+    // "5b47574386f77428ca22b33b" //Rounds
+    // "5b47574386f77428ca22b331" //Eyewear
+    // "5b5f798886f77447ed5636b5" //Bolt-action rifles
+    // "5b5f742686f774093e6cb4ff" //Collimators
+    // "5b5f761f86f774094242f1a1" //Pistol grips
+    // "5b5f71de86f774093f2ecf13" //Foregrips
+    // "5b5f764186f77447ec5d7714" //Receivers & slides
+    // "5b5f75c686f774094242f19f" //Barrels
+    // "5b5f75e486f77447ec5d7712" //Handguards
+    // "5b5f755f86f77447ec5d770e" //Mounts
+    // "5b5f757486f774093e6cb507" //Stocks & chassis
+    // "5b5f746686f77447ec5d7708" //Iron sights
+    // "5b5f731a86f774093e6cb4f9" //Suppressors
+    // "5b5f72f786f77447ec5d7702" //Muzzle adapters
+    // "5b47574386f77428ca22b330" //Headgear
+    // "5b5f6f3c86f774094242ef87" //Headsets
+    // "5b5f701386f774093f2ecf0f" //Body armor
+    // "5b5f751486f77447ec5d770c" //Charging handles
+    // "5b5f6fa186f77409407a7eb7" //Storage containers
+    // "5b47574386f77428ca22b2ed" //Energy elements
+    // "5b47574386f77428ca22b2ef" //Electronics
+    // "5b47574386f77428ca22b2f2" //Flammable materials
+    // "5b5f748386f774093e6cb501" //Optics
+    // "5b5f71c186f77409407a7ec0" //Bipods
+    // "5b5f760586f774093e6cb509" //Gas blocks
+    // "5b5f749986f774094242f199" //Special purpose sights
+    // "5b47574386f77428ca22b32f" //Facecovers
+    // "5b47574386f77428ca22b2f1" //Valuables
+    // "5b47574386f77428ca22b2f4" //Others
+    // "5b47574386f77428ca22b2ee" //Building materials
+    // "5b47574386f77428ca22b2f0" //Household materials
+    // "5b5f78e986f77447ed5636b1" //Assault carbines
+    // "5b47574386f77428ca22b343" //Maps
+    // "5b5f744786f774094242f197" //Compact collimators
+    // "5b5f796a86f774093f2ed3c0" //Submachine guns
+    // "5b5f73ab86f774094242f195" //Flashlights
+    // "5b47574386f77428ca22b2f6" //Tools
+    // "5b47574386f77428ca22b341" //Info items
+    // "5b5f74cc86f77447ec5d770a" //Auxiliary parts
+    // "5b47574386f77428ca22b2f3" //Medical supplies
+    // "5b5f704686f77447ec5d76d7" //Gear components
+    // "5b5f791486f774093f2ed3be" //Marksman rifles
+    // "5c518ed586f774119a772aee" //Electronic keys
+    // "5b5f73c486f77447ec5d7704" //Laser aiming modules
+    // "5b5f79eb86f77447ed5636b7" //Special weapons
+    // "5b5f79a486f77409407a7f94" //Machine guns
+    
+    // More category and items here:
+    // RU https://github.com/hiop/SPT-DynamicFleaPrice/blob/master/Config/SPT-407-CategoryAndItem-Ru.txt
+    // EN https://github.com/hiop/SPT-DynamicFleaPrice/blob/master/Config/SPT-407-CategoryAndItem-En.txt
   }
 }

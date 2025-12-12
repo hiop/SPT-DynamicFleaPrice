@@ -14,6 +14,7 @@ public class DynamicFleaPrice(
     DatabaseService databaseService
 )
 {
+    public static string modName = "DynamicFleaPrice";
     private static string _dataPath = @"user\mods\DynamicFleaPrice\Data\DynamicFleaPriceData.json";
     private DynamicFleaPriceData? _data;
     private DynamicFleaPriceConfig? _config;
@@ -135,47 +136,55 @@ public class DynamicFleaPrice(
     }
 
     /**
-     * Decreases counters (items, categories) depending on the config
+     * Regenerate/Decreases counters (items, categories) depending on the config
      */
     public void DecreaseCounters()
     {
-        if (_data == null) return;
+        if (_data == null || _config == null) return;
         
         _data.ItemPurchased = _data.ItemPurchased.ToDictionary(
             kvp => kvp.Key,
-            kvp =>
-            {
-                var decreasePercent = _config.DecreaseOfPurchasePercentage * 0.01;
-                var decreaseCountBy = (int)((kvp.Value ?? 0) * decreasePercent);
-
-                // if decreaseCountBy is lower by 1, then just subtract from result 1;
-                if (decreaseCountBy <= 0)
-                {
-                    decreaseCountBy = 1;
-                }
-
-                var result = kvp.Value - decreaseCountBy;
-                return result < 0 ? 0 : result;
-            });
+            kvp => PerformCounterValue(kvp.Value ?? 0)
+            );
 
         _data.ItemCategyPurchased = _data.ItemCategyPurchased.ToDictionary(
             kvp => kvp.Key,
-            kvp =>
-            {
-                var decreasePercent = _config.DecreaseOfPurchasePercentage * 0.01;
-                var decreaseCountBy = (int)((kvp.Value ?? 0) * decreasePercent);
-
-                // if decreaseCountBy is lower by 1, then just subtract from result 1;
-                if (decreaseCountBy <= 0)
-                {
-                    decreaseCountBy = 1;
-                }
-
-                var result = kvp.Value - decreaseCountBy;
-                return result < 0 ? 0 : result;
-            });
+            kvp => PerformCounterValue(kvp.Value ?? 0));
 
         SaveDynamicFleaData();
+    }
+
+    private int? PerformCounterValue(int counterValue)
+    {
+        double percent = 0d;
+        if (counterValue > 0)
+        {
+            if(_config.DecreaseCountersPercentage == 0) return counterValue;
+            percent = _config.DecreaseCountersPercentage * 0.01;
+        }
+        else if(counterValue < 0)
+        {
+            if(_config.RegenerateCountersPercentage == 0) return counterValue;
+            percent = _config.RegenerateCountersPercentage * 0.01;
+        }
+        else
+        {
+            return counterValue;
+        }
+
+        var changeCounterBy = counterValue * percent; 
+        
+        // The subtracted value cannot be 0
+        if (changeCounterBy is < 0 and > -1)
+        {
+            changeCounterBy = -1;
+        }
+        else if(changeCounterBy is > 0 and < 1)
+        {
+            changeCounterBy = 1;
+        }
+
+        return counterValue - (int)changeCounterBy;
     }
     
     /**
@@ -195,7 +204,7 @@ public class DynamicFleaPrice(
         }
         catch (Exception ex)
         {
-            logger.Error("on save data", ex);
+            logger.Error($"{modName}: on save data", ex);
         }
     }
 
@@ -220,7 +229,7 @@ public class DynamicFleaPrice(
         }
         catch (Exception ex)
         {
-            logger.Warning("error on load data, set default: " + ex.Message);
+            logger.Warning($"{modName}:  error on load data, USE DEFAULT. " + ex.Message);
             _data = new DynamicFleaPriceData()
             {
                 ItemPurchased = new Dictionary<string, int?>(),
@@ -259,8 +268,11 @@ public class DynamicFleaPrice(
                     OnlyFoundInRaidForFleaOffers = true,
                     IncreaseMultiplierPerItem = new Dictionary<string, double>(),
                     IncreaseMultiplierPerItemCategory = new Dictionary<string, double>(),
-                    DecreaseOfPurchasePercentage = 1,
-                    DecreaseOfPurchasePeriod = 600,
+                    DecreaseCountersPercentage = 1,
+                    UpdateCountersPeriod = 600,
+                    RegenerateCountersPercentage = 1,
+                    IncreaseCounterBuyMultiplier = 1,
+                    DecreaseCounterSellMultiplier = 5
                 };
 
 
@@ -270,24 +282,32 @@ public class DynamicFleaPrice(
         }
         catch (Exception ex)
         {
-            logger.Error("on load config", ex);
-            _config = new DynamicFleaPriceConfig()
-            {
-                IncreaseMultiplierPerItem = new Dictionary<string, double>(),
-                IncreaseMultiplierPerItemCategory = new Dictionary<string, double>()
-            };
+            logger.Error($"{modName}: error on load config", ex);
+            throw;
         }
     }
 
     public int? GetDecreaseOfPurchasePeriod()
     {
-        return _config?.DecreaseOfPurchasePeriod;
+        return _config?.UpdateCountersPeriod;
     }
 
     public bool GetOnlyFoundInRaidForFleaOffers()
     {
         return (bool)_config?.OnlyFoundInRaidForFleaOffers;
     }
+    
+    public int GetIncreaseCounterByPurchaseMultiplier()
+    {
+        return _config?.IncreaseCounterBuyMultiplier ?? 1;
+    }
+    
+    public int GetDecreaseCounterBySellMultiplier()
+    {
+        return _config?.DecreaseCounterSellMultiplier ?? 1;
+    }
+    
+    
 }
 
 public class DynamicFleaPriceData
@@ -303,11 +323,20 @@ public class DynamicFleaPriceConfig
     [JsonPropertyName("onlyFoundInRaidForFleaOffers")]
     public bool OnlyFoundInRaidForFleaOffers { get; set; }
 
-    [JsonPropertyName("decreaseOfPurchasePercentage")]
-    public int DecreaseOfPurchasePercentage { get; set; }
+    [JsonPropertyName("decreaseCountersPercentage")]
+    public int DecreaseCountersPercentage { get; set; }
+    
+    [JsonPropertyName("regenerateCountersPercentage")]
+    public int RegenerateCountersPercentage { get; set; }
 
-    [JsonPropertyName("decreaseOfPurchasePeriod")]
-    public int DecreaseOfPurchasePeriod { get; set; }
+    [JsonPropertyName("increaseCounterBuyMultiplier")]
+    public int IncreaseCounterBuyMultiplier { get; set; }
+    
+    [JsonPropertyName("decreaseCounterSellMultiplier")]
+    public int DecreaseCounterSellMultiplier { get; set; }
+
+    [JsonPropertyName("updateCountersPeriod")]
+    public int UpdateCountersPeriod { get; set; }
 
     [JsonPropertyName("increaseMultiplierPerItem")]
     public Dictionary<string, double> IncreaseMultiplierPerItem { get; set; }

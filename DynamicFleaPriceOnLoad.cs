@@ -10,10 +10,10 @@ namespace DynamicFleaNamespace;
 public record ModMetadata : AbstractModMetadata
 {
     public override string ModGuid { get; init; } = "hiop.dynamic.flea.price";
-    public override string Name { get; init; } = "DynamicFleaPrice";
+    public override string Name { get; init; } = DynamicFleaPrice.modName;
     public override string Author { get; init; } = "HioP";
     public override List<string>? Contributors { get; init; }
-    public override Version Version { get; init; } = new("0.0.2");
+    public override Version Version { get; init; } = new("1.0.0");
     public override Range SptVersion { get; init; } = new("~4.0.0");
     
     
@@ -39,7 +39,7 @@ public class DynamicFleaPriceOnLoad(
 
         if (dynamicFleaPrice.GetDecreaseOfPurchasePeriod() == null)
         {
-            logger.Error("The counter update cycle has not started. Check your settings.");
+            logger.Error($"{DynamicFleaPrice.modName} The counter update cycle has not started. Check your settings.");
             return Task.CompletedTask;
         }
         

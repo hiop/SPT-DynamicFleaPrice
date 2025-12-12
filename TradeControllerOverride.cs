@@ -50,12 +50,14 @@ public class TradeControllerOverride(
             
             // if trader offer don't increase counter
             if(offerItem.IsTraderOffer()) continue;
-            
-            if(offerItem == null || offerItem.Items == null) continue;
+            if(offerItem.Items == null) continue;
                 
             foreach (var offerItemItem in offerItem.Items)
             {
-                    dynamicFleaPrice.AddItemOrIncreaseCount(offerItemItem.Template, requestOffer.Count);
+                    dynamicFleaPrice.AddItemOrIncreaseCount(
+                        offerItemItem.Template, 
+                        requestOffer.Count * dynamicFleaPrice.GetIncreaseCounterByPurchaseMultiplier()
+                        );
             }
         }
         
