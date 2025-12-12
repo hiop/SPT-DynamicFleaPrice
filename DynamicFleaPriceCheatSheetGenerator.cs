@@ -1,5 +1,4 @@
-﻿using SPTarkov.DI.Annotations;
-using SPTarkov.Server.Core.DI;
+﻿using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Services;

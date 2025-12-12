@@ -1,5 +1,4 @@
 ﻿using SPTarkov.DI.Annotations;
-using SPTarkov.Server.Core.Extensions;
 using SPTarkov.Server.Core.Helpers;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
@@ -38,21 +37,6 @@ public class RagfairPriceServiceOverride(
     configServer)
 {
     private readonly RagfairConfig RagfairConfig = configServer.GetConfig<RagfairConfig>();
-
-    /**
-            //  protected readonly RagfairConfig RagfairConfig = configServer.GetConfig<RagfairConfig>();
-            // var config = RagfairConfig.Dynamic.GenerateBaseFleaPrices;
-            if (config.PreventPriceBeingBelowTraderBuyPrice)
-            {
-                // Check if item can be sold to trader for a higher price than what we're going to set
-                var highestSellToTraderPrice = traderHelper.GetHighestSellToTraderPrice(itemTpl);
-                if (highestSellToTraderPrice > newBasePrice)
-                {
-                    // Trader has higher sell price, use that value
-                    newBasePrice = highestSellToTraderPrice;
-                }
-            }
-     */
 
     private double GetTraderPriceIfPriceBeingBelowTraderBuyPrice(Item item, MongoId currency, double itemFleaPrice)
     {
