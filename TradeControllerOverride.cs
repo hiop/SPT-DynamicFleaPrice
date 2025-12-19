@@ -52,7 +52,7 @@ public class TradeControllerOverride(
                 
             foreach (var offerItemItem in offerItem.Items)
             {
-                    dynamicFleaPrice.AddItemOrIncreaseCount(
+                    dynamicFleaPrice.AddOrIncreaseMultiplier(
                         offerItemItem.Template, 
                         requestOffer.Count * dynamicFleaPrice.GetIncreaseCounterByPurchaseMultiplier()
                         );

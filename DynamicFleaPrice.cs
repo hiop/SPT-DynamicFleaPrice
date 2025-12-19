@@ -14,43 +14,26 @@ public class DynamicFleaPrice(
     DatabaseService databaseService
 )
 {
-    public static string modName = "DynamicFleaPrice";
-    private static string _dataPath = @"user\mods\DynamicFleaPrice\Data\DynamicFleaPriceData.json";
+    public static readonly string ModName = "DynamicFleaPrice";
+    private static readonly string _dataPath = @"user\mods\DynamicFleaPrice\Data\DynamicFleaPriceData.json";
     private DynamicFleaPriceData? _data;
     private DynamicFleaPriceConfig? _config;
 
     /**
-     * Get item multiplier ITEM + CATEGORY multiplier
+     * Get item multiplier ITEM + CATEGORY
      */
     public double GetItemMultiplier(MongoId template)
     {
         double itemMultiplier = 1;
-        double configItemMultiplier = 0;
         MongoId? category = databaseService.GetHandbook().Items
             .Where(handbookItem => handbookItem.Id.Equals(template))
             .Select(handbookItem => handbookItem.ParentId).FirstOrDefault();
 
-        if (_config.IncreaseMultiplierPerItem.TryGetValue(template, out var multiplierPerItem))
+        if (_data != null && _data.ItemMultiplier.TryGetValue(template, out var dataItemMultiplier))
         {
-            configItemMultiplier = multiplierPerItem;
+            itemMultiplier = dataItemMultiplier;
         }
-
-        if (_data != null && _data.ItemPurchased.TryGetValue(template, out var itemCount))
-        {
-            itemMultiplier = configItemMultiplier * itemCount ?? 1;
-        }
-
-        if (itemMultiplier < 1)
-        {
-            itemMultiplier += 1;
-        }
-
         var finalMulti = itemMultiplier + GetItemCategoryMultiplier(category);
-
-        if (finalMulti > 1)
-        {
-            logger.Debug("template=" + template + " x" + finalMulti);
-        }
 
         return finalMulti;
     }
@@ -63,15 +46,10 @@ public class DynamicFleaPrice(
         }
 
         double categoryMultiplier = 0;
-        double configMultiplierCategory = 0;
-        if (_config.IncreaseMultiplierPerItemCategory.TryGetValue(category, out var _multiplierPerCategory))
+        
+        if (_data != null && _data.ItemCategoryMultiplier.TryGetValue(category, out var dataCategoryMultiplier))
         {
-            configMultiplierCategory = _multiplierPerCategory;
-        }
-
-        if (_data != null && _data.ItemCategyPurchased.TryGetValue(category, out var _categoryCount))
-        {
-            categoryMultiplier = (_categoryCount ?? 0) * configMultiplierCategory;
+            categoryMultiplier = dataCategoryMultiplier;
             if (categoryMultiplier > 0)
             {
                 logger.Debug("    category=" + category + " x" + categoryMultiplier);
@@ -82,113 +60,110 @@ public class DynamicFleaPrice(
     }
 
     /**
-     * Increase counter for item (item and ctegory counters)
+     * Increase multiplier for item (item and category)
      */
-    public void AddItemOrIncreaseCount(MongoId template, int? count)
+    public void AddOrIncreaseMultiplier(MongoId template, int? count)
     {
-        AddItemOrIncreaseItemCount(template, count);
+        AddOrIncreaseItemMultiplier(template, count);
         MongoId category = databaseService.GetHandbook().Items
             .Where(handbookItem => handbookItem.Id.Equals(template))
             .Select(handbookItem => handbookItem.ParentId).FirstOrDefault();
 
         if (category != null!)
         {
-            AddItemOrIncreaseItemCategoryCount(category, count);
+            AddOrIncreaseItemCategoryMultiplier(category, count);
         }
     }
 
-    private void AddItemOrIncreaseItemCount(MongoId template, int? count)
+    private void AddOrIncreaseItemMultiplier(MongoId template, int? count)
     {
-        if (_data == null)
+        if (_data == null || _config == null)
         {
             return;
         }
-
-        if (!_data.ItemPurchased.ContainsKey(template))
+        
+        _config.IncreaseMultiplierPerItem.TryGetValue(template, out var multiplierPerItem);
+        if(multiplierPerItem <= 0) return;
+        
+        if (!_data.ItemMultiplier.ContainsKey(template))
         {
-            logger.Debug("added item" + template);
-            _data.ItemPurchased.Add(template, count);
+            logger.Debug("added item multiplier" + template);
+            _data.ItemMultiplier.Add(template, count * multiplierPerItem ?? 0);
         }
         else
         {
-            logger.Debug("increase item" + template);
-            _data.ItemPurchased[template] += count;
+            logger.Debug("increase item multiplier" + template);
+            _data.ItemMultiplier[template] += count * multiplierPerItem ?? 0;
         }
     }
 
-    private void AddItemOrIncreaseItemCategoryCount(MongoId category, int? count)
+    private void AddOrIncreaseItemCategoryMultiplier(MongoId category, int? count)
     {
-        if (_data == null)
+        if (_data == null || _config == null)
         {
             return;
         }
+        
+        _config.IncreaseMultiplierPerItemCategory.TryGetValue(category, out var multiplierPerCategory);
+        if(multiplierPerCategory <= 0) return;
 
-        if (!_data.ItemCategyPurchased.ContainsKey(category))
+        if (!_data.ItemCategoryMultiplier.ContainsKey(category))
         {
-            logger.Debug("added category" + category);
-            _data.ItemCategyPurchased.Add(category, count);
+            logger.Debug("added category multiplier" + category);
+            _data.ItemCategoryMultiplier.Add(category, count * multiplierPerCategory ?? 0);
         }
         else
         {
-            logger.Debug("increase category" + category);
-            _data.ItemCategyPurchased[category] += count;
+            logger.Debug("increase category multiplier" + category);
+            _data.ItemCategoryMultiplier[category] += count * multiplierPerCategory ?? 0;
         }
     }
 
     /**
-     * Regenerate/Decreases counters (items, categories) depending on the config
+     * Regenerate/Decreases multiplier (items, categories) depending on the config
      */
-    public void DecreaseCounters()
+    public void UpdateMultiplier()
     {
         if (_data == null || _config == null) return;
         
-        _data.ItemPurchased = _data.ItemPurchased.ToDictionary(
+        _data.ItemMultiplier = _data.ItemMultiplier.ToDictionary(
             kvp => kvp.Key,
-            kvp => PerformCounterValue(kvp.Value ?? 0)
+            kvp => PerformMultiplierValue(kvp.Value) ?? 0
             );
 
-        _data.ItemCategyPurchased = _data.ItemCategyPurchased.ToDictionary(
+        _data.ItemCategoryMultiplier = _data.ItemCategoryMultiplier.ToDictionary(
             kvp => kvp.Key,
-            kvp => PerformCounterValue(kvp.Value ?? 0));
+            kvp => PerformMultiplierValue(kvp.Value) ?? 0);
 
         SaveDynamicFleaData();
     }
-
-    private int? PerformCounterValue(int counterValue)
+    
+    private double? PerformMultiplierValue(double multiplier)
     {
         double percent = 0d;
-        if (counterValue > 0)
+
+        if (multiplier > 0)
         {
-            if(_config.DecreaseCountersPercentage == 0) return counterValue;
-            percent = _config.DecreaseCountersPercentage * 0.01;
+            if(_config.DecreaseMultiplierPercentage == 0) return multiplier;
+            percent = _config.DecreaseMultiplierPercentage * 0.01;
         }
-        else if(counterValue < 0)
+        else if(multiplier < 0)
         {
-            if(_config.RegenerateCountersPercentage == 0) return counterValue;
-            percent = _config.RegenerateCountersPercentage * 0.01;
+            if(_config.RegenerateMultiplierPercentage == 0) return multiplier;
+            percent = _config.RegenerateMultiplierPercentage * 0.01;
         }
         else
         {
-            return counterValue;
+            return multiplier;
         }
 
-        var changeCounterBy = counterValue * percent; 
-        
-        // The subtracted value cannot be 0
-        if (changeCounterBy is < 0 and > -1)
-        {
-            changeCounterBy = -1;
-        }
-        else if(changeCounterBy is > 0 and < 1)
-        {
-            changeCounterBy = 1;
-        }
+        var changeCounterBy = multiplier * percent; 
 
-        return counterValue - (int)changeCounterBy;
+        return multiplier - changeCounterBy;
     }
     
     /**
-     * Save counters data to json file
+     * Save multiplier data to json file
      */
     public void SaveDynamicFleaData()
     {
@@ -204,7 +179,7 @@ public class DynamicFleaPrice(
         }
         catch (Exception ex)
         {
-            logger.Error($"{modName}: on save data", ex);
+            logger.Error($"{ModName}: on save data", ex);
         }
     }
 
@@ -227,14 +202,19 @@ public class DynamicFleaPrice(
 
             _data = loadedData;
         }
-        catch (Exception ex)
+        catch(DirectoryNotFoundException)
         {
-            logger.Warning($"{modName}:  error on load data, USE DEFAULT. " + ex.Message);
+            logger.Warning($"{ModName}: data not found, generation of new");
             _data = new DynamicFleaPriceData()
             {
-                ItemPurchased = new Dictionary<string, int?>(),
-                ItemCategyPurchased = new Dictionary<string, int?>(),
+                ItemCategoryMultiplier = new Dictionary<string, double>(),
+                ItemMultiplier = new Dictionary<string, double>(),
             };
+        }
+        catch (Exception ex)
+        {
+            logger.Error($"{ModName}:  error on load data," + ex.Message);
+            throw;
         }
     }
     
@@ -265,14 +245,13 @@ public class DynamicFleaPrice(
             {
                 _config = new DynamicFleaPriceConfig()
                 {
-                    OnlyFoundInRaidForFleaOffers = true,
                     IncreaseMultiplierPerItem = new Dictionary<string, double>(),
                     IncreaseMultiplierPerItemCategory = new Dictionary<string, double>(),
-                    DecreaseCountersPercentage = 1,
-                    UpdateCountersPeriod = 600,
-                    RegenerateCountersPercentage = 1,
-                    IncreaseCounterBuyMultiplier = 1,
-                    DecreaseCounterSellMultiplier = 5
+                    DecreaseMultiplierPercentage = 1,
+                    UpdatePeriod = 600,
+                    RegenerateMultiplierPercentage = 1,
+                    MoreMultiplierPerBuying = 1,
+                    MoreMultiplierPerSelling = 5
                 };
 
 
@@ -282,29 +261,24 @@ public class DynamicFleaPrice(
         }
         catch (Exception ex)
         {
-            logger.Error($"{modName}: error on load config", ex);
+            logger.Error($"{ModName}: error on load config", ex);
             throw;
         }
     }
 
     public int? GetDecreaseOfPurchasePeriod()
     {
-        return _config?.UpdateCountersPeriod;
+        return _config?.UpdatePeriod;
     }
 
-    public bool GetOnlyFoundInRaidForFleaOffers()
-    {
-        return (bool)_config?.OnlyFoundInRaidForFleaOffers;
-    }
-    
     public int GetIncreaseCounterByPurchaseMultiplier()
     {
-        return _config?.IncreaseCounterBuyMultiplier ?? 1;
+        return _config?.MoreMultiplierPerBuying ?? 1;
     }
     
     public int GetDecreaseCounterBySellMultiplier()
     {
-        return _config?.DecreaseCounterSellMultiplier ?? 1;
+        return _config?.MoreMultiplierPerSelling ?? 1;
     }
     
     
@@ -312,31 +286,30 @@ public class DynamicFleaPrice(
 
 public class DynamicFleaPriceData
 {
-    [JsonPropertyName("itemPurchased")] public required Dictionary<string, int?> ItemPurchased { get; set; }
+    
+    [JsonPropertyName("itemMultiplier")] 
+    public Dictionary<string, double> ItemMultiplier { get; set; } = null!;
 
-    [JsonPropertyName("itemCategoryPurchased")]
-    public required Dictionary<string, int?> ItemCategyPurchased { get; set; }
+    [JsonPropertyName("itemCategoryMultiplier")]
+    public Dictionary<string, double> ItemCategoryMultiplier { get; set; } = null!;
 }
 
 public class DynamicFleaPriceConfig
 {
-    [JsonPropertyName("onlyFoundInRaidForFleaOffers")]
-    public bool OnlyFoundInRaidForFleaOffers { get; set; }
-
-    [JsonPropertyName("decreaseCountersPercentage")]
-    public int DecreaseCountersPercentage { get; set; }
+    [JsonPropertyName("decreaseMultiplierPercentage")]
+    public int DecreaseMultiplierPercentage { get; set; }
     
-    [JsonPropertyName("regenerateCountersPercentage")]
-    public int RegenerateCountersPercentage { get; set; }
+    [JsonPropertyName("regenerateMultiplierPercentage")]
+    public int RegenerateMultiplierPercentage { get; set; }
 
-    [JsonPropertyName("increaseCounterBuyMultiplier")]
-    public int IncreaseCounterBuyMultiplier { get; set; }
+    [JsonPropertyName("moreMultiplierPerBuying")]
+    public int MoreMultiplierPerBuying { get; set; }
     
-    [JsonPropertyName("decreaseCounterSellMultiplier")]
-    public int DecreaseCounterSellMultiplier { get; set; }
+    [JsonPropertyName("moreMultiplierPerSelling")]
+    public int MoreMultiplierPerSelling { get; set; }
 
-    [JsonPropertyName("updateCountersPeriod")]
-    public int UpdateCountersPeriod { get; set; }
+    [JsonPropertyName("updatePeriod")]
+    public int UpdatePeriod { get; set; }
 
     [JsonPropertyName("increaseMultiplierPerItem")]
     public Dictionary<string, double> IncreaseMultiplierPerItem { get; set; }

@@ -96,18 +96,18 @@ public class RagfairPriceServiceOverride(
                 continue;
             }
             
-            double dynamicMulty = GetPriceMultiplier(item.Template);
+            double dynamicMulti = GetPriceMultiplier(item.Template);
             
 
-            if (dynamicMulty > 0)
+            if (dynamicMulti > 0)
             {
-                var itemPrice = (GetDynamicItemPrice(item.Template, desiredCurrency, item, offerItems, isPackOffer) ?? 0) * dynamicMulty;
+                var itemPrice = (GetDynamicItemPrice(item.Template, desiredCurrency, item, offerItems, isPackOffer) ?? 0) * dynamicMulti;
                 itemPrice = GetTraderPriceIfPriceBeingBelowTraderBuyPrice(item, desiredCurrency, itemPrice);
                 price += itemPrice;
             }
             else
             {
-                var itemPrice = (GetDynamicItemPrice(item.Template, desiredCurrency, item, offerItems, isPackOffer) ?? 0) / Math.Abs(dynamicMulty);
+                var itemPrice = (GetDynamicItemPrice(item.Template, desiredCurrency, item, offerItems, isPackOffer) ?? 0) / Math.Abs(dynamicMulti);
                 itemPrice = GetTraderPriceIfPriceBeingBelowTraderBuyPrice(item, desiredCurrency, itemPrice);
                 price += itemPrice;
             }
@@ -127,18 +127,18 @@ public class RagfairPriceServiceOverride(
 
     private double GetPriceMultiplier(MongoId template)
     {
-        double dynamicMulty = dynamicFleaPrice.GetItemMultiplier(template);
+        double dynamicMulti = dynamicFleaPrice.GetItemMultiplier(template);
         
-        if (dynamicMulty is >= 0 and < 1)
+        if (dynamicMulti is >= 0 and < 1)
         {
-            dynamicMulty = 1;
+            dynamicMulti += 1;
         }
             
-        if (dynamicMulty is < 0 and > -1)
+        if (dynamicMulti is < 0 and > -1)
         {
-            dynamicMulty = -1;
+            dynamicMulti += -1;
         }
         
-        return dynamicMulty;
+        return dynamicMulti;
     }
 }

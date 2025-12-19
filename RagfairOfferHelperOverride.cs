@@ -42,6 +42,9 @@ public class RagfairOfferHelperOverride(
     configServer, cloner
 )
 {
+    /**
+     * After complete offer need to reduce multiplier
+     */
     public override ItemEventRouterResponse CompleteOffer(MongoId offerOwnerSessionId, RagfairOffer offer, int boughtAmount)
     {
         var response = base.CompleteOffer(offerOwnerSessionId, offer, boughtAmount);
@@ -51,7 +54,7 @@ public class RagfairOfferHelperOverride(
             var count = offerItem?.Upd?.StackObjectsCount ?? 1;
             var multiplier = dynamicFleaPrice.GetDecreaseCounterBySellMultiplier();
             
-            dynamicFleaPrice.AddItemOrIncreaseCount(
+            dynamicFleaPrice.AddOrIncreaseMultiplier(
                 offerItem?.Template ?? null!, 
                 -(int)(count * multiplier)
             );
