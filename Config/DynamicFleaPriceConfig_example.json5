@@ -1,4 +1,12 @@
 {
+  // --	
+  // Only items "found in a raid" can be sold at the flea market
+  // --
+  // Currently, the mod won't work correctly unless this option is enabled. 
+  // But why? Because dynamic pricing is abusive. You can buy the items you need, wait for the price to rise, 
+  // and then sell them all in bulk. PROFIT!!!
+  "onlyFoundInRaidForFleaOffers": true,
+  
   // ---
   // Update multiplier
   // ---

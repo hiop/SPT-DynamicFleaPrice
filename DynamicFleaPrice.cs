@@ -245,6 +245,7 @@ public class DynamicFleaPrice(
             {
                 _config = new DynamicFleaPriceConfig()
                 {
+                    OnlyFoundInRaidForFleaOffers = false,
                     IncreaseMultiplierPerItem = new Dictionary<string, double>(),
                     IncreaseMultiplierPerItemCategory = new Dictionary<string, double>(),
                     DecreaseMultiplierPercentage = 1,
@@ -281,12 +282,14 @@ public class DynamicFleaPrice(
         return _config?.MoreMultiplierPerSelling ?? 1;
     }
     
-    
+    public bool GetOnlyFoundInRaidForFleaOffers()
+    {
+        return (bool)_config?.OnlyFoundInRaidForFleaOffers;
+    }
 }
 
 public class DynamicFleaPriceData
 {
-    
     [JsonPropertyName("itemMultiplier")] 
     public Dictionary<string, double> ItemMultiplier { get; set; } = null!;
 
@@ -296,6 +299,9 @@ public class DynamicFleaPriceData
 
 public class DynamicFleaPriceConfig
 {
+    [JsonPropertyName("onlyFoundInRaidForFleaOffers")]
+    public bool OnlyFoundInRaidForFleaOffers { get; set; } = true;
+    
     [JsonPropertyName("decreaseMultiplierPercentage")]
     public int DecreaseMultiplierPercentage { get; set; }
     
