@@ -61,7 +61,7 @@ public class RagfairControllerOverride(
         {
             foreach (var item in items)
             {
-                if (item.Upd == null || item.Upd.SpawnedInSession.Equals(false))
+                if (item.Upd == null || item.Upd.SpawnedInSession.Equals(null) || item.Upd.SpawnedInSession.Equals(false))
                 {
                     if (dynamicFleaPrice.GetOnlyFoundInRaidForFleaOffers())
                     {
