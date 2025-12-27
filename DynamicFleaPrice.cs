@@ -15,7 +15,9 @@ public class DynamicFleaPrice(
 )
 {
     public static readonly string ModName = "DynamicFleaPrice";
-    private static readonly string _dataPath = @"user\mods\DynamicFleaPrice\Data\DynamicFleaPriceData.json";
+    private static readonly string _dataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "user", "mods", "DynamicFleaPrice", "Data", "DynamicFleaPriceData.json");
+    private static readonly string _configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "user", "mods", "DynamicFleaPrice", "Config", "DynamicFleaPriceConfig.json5");
+    
     private DynamicFleaPriceData? _data;
     private DynamicFleaPriceConfig? _config;
 
@@ -169,13 +171,12 @@ public class DynamicFleaPrice(
     {
         try
         {
-            var dataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _dataPath);
-            var fileInfo = new FileInfo(dataPath);
+            var fileInfo = new FileInfo(_dataPath);
 
             fileInfo.Directory?.Create();
 
             var jsonString = JsonSerializer.Serialize(_data, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(dataPath, jsonString);
+            File.WriteAllText(_dataPath, jsonString);
         }
         catch (Exception ex)
         {
@@ -190,9 +191,7 @@ public class DynamicFleaPrice(
     {
         try
         {
-            var dataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _dataPath);
-
-            var jsonContent = File.ReadAllText(dataPath);
+            var jsonContent = File.ReadAllText(_dataPath);
             var loadedData = JsonSerializer.Deserialize<DynamicFleaPriceData>(jsonContent, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,
@@ -202,19 +201,24 @@ public class DynamicFleaPrice(
 
             _data = loadedData;
         }
-        catch(DirectoryNotFoundException)
-        {
-            logger.Warning($"{ModName}: data not found, generation of new");
-            _data = new DynamicFleaPriceData()
-            {
-                ItemCategoryMultiplier = new Dictionary<string, double>(),
-                ItemMultiplier = new Dictionary<string, double>(),
-            };
-        }
         catch (Exception ex)
         {
-            logger.Error($"{ModName}:  error on load data," + ex.Message);
-            throw;
+            if (ex is FileNotFoundException or DirectoryNotFoundException)
+            {
+                logger.Warning($"{ModName}: data not found, generation of new");
+                _data = new DynamicFleaPriceData()
+                {
+                    ItemCategoryMultiplier = new Dictionary<string, double>(),
+                    ItemMultiplier = new Dictionary<string, double>(),
+                };
+
+                SaveDynamicFleaData();
+            }
+            else
+            {
+                logger.Error($"{ModName}:  error on load data," + ex.Message);
+                throw;
+            }
         }
     }
     
@@ -225,12 +229,9 @@ public class DynamicFleaPrice(
     {
         try
         {
-            var configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
-                @"user\mods\DynamicFleaPrice\Config\DynamicFleaPriceConfig.json5");
-
-            if (File.Exists(configPath))
+            if (File.Exists(_configPath))
             {
-                var jsonContent = File.ReadAllText(configPath);
+                var jsonContent = File.ReadAllText(_configPath);
                 var loadedConfig = JsonSerializer.Deserialize<DynamicFleaPriceConfig>(jsonContent,
                     new JsonSerializerOptions
                     {
@@ -251,12 +252,14 @@ public class DynamicFleaPrice(
                     UpdatePeriod = 600,
                     RegenerateMultiplierPercentage = 1,
                     MoreMultiplierPerBuying = 1,
-                    MoreMultiplierPerSelling = 5
+                    MoreMultiplierPerSelling = 2
                 };
-
+                
+                var fileInfo = new FileInfo(_configPath);
+                fileInfo.Directory?.Create();
 
                 var jsonString = JsonSerializer.Serialize(_config, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(configPath, jsonString);
+                File.WriteAllText(_configPath, jsonString);
             }
         }
         catch (Exception ex)
