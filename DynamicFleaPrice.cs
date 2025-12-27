@@ -303,7 +303,7 @@ public class DynamicFleaPriceData
 public class DynamicFleaPriceConfig
 {
     [JsonPropertyName("onlyFoundInRaidForFleaOffers")]
-    public bool OnlyFoundInRaidForFleaOffers { get; set; } = true;
+    public bool OnlyFoundInRaidForFleaOffers { get; set; } = false;
     
     [JsonPropertyName("decreaseMultiplierPercentage")]
     public int DecreaseMultiplierPercentage { get; set; }
