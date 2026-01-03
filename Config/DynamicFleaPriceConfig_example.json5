@@ -1,4 +1,8 @@
 {
+  // Export all ids of categories/items to txt file:  SPT\user\mods\DynamicFleaPrice\ItemAndCategories.txt
+  "itemsAndCategoriesExportLocale": "en", //ch,cz,en,es,es-mx,fr,ge,hu,it,jp,kr,pl,po,ro,ru,sk,tu
+  "itemsAndCategoriesExport": true,
+  
   // --	
   // Only items "found in a raid" can be sold at the flea market
   // --

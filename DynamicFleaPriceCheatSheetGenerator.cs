@@ -1,4 +1,6 @@
-﻿using SPTarkov.Server.Core.DI;
+﻿using System.Text;
+using SPTarkov.DI.Annotations;
+using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Services;
@@ -6,19 +8,25 @@ using SPTarkov.Server.Core.Services;
 namespace DynamicFleaNamespace;
 
 // There's no need to inject it, as it's used to generate sheets to make searching for identifiers easier
-//[Injectable(TypePriority = OnLoadOrder.PostDBModLoader)]
+[Injectable(TypePriority = OnLoadOrder.PostSptModLoader)]
 public class DynamicFleaPriceCheatSheetGenerator(
     ISptLogger<DynamicFleaPriceCheatSheetGenerator> logger,
     DatabaseService databaseService,
-    LocaleService localeService
+    LocaleService localeService,
+    DynamicFleaPrice dynamicFleaPrice
     ) : IOnLoad
 {
     private Dictionary<string, List<string>> templateDictionary = new();
     public Task OnLoad()
     {
-        var locale = localeService.GetLocaleDb("en");
+        if (dynamicFleaPrice.GetItemsAndCategoriesExport() == false)
+        {
+            return Task.CompletedTask;
+        }
         
+        var locale = localeService.GetLocaleDb(dynamicFleaPrice.GetItemsAndCategoriesExportLocale());
         var handBook = databaseService.GetHandbook();
+        StringBuilder itemStringBuilder = new();
         
         foreach (var pair in databaseService.GetPrices())
         {
@@ -31,26 +39,40 @@ public class DynamicFleaPriceCheatSheetGenerator(
             
             if (handbookItem == null)
             {
+                var errorItemName = "???";
+                try
+                {
+                    errorItemName = locale[templateId + " Name"];
+                }
+                catch (Exception ex)
+                {
+                    //
+                }
+                logger.Error($"Item error: {templateId} | {errorItemName}");
+
                 continue;
-            }else if(!templateDictionary.ContainsKey(handbookItem.ParentId)){
+            } else if(!templateDictionary.ContainsKey(handbookItem.ParentId)){
                 templateDictionary.Add(handbookItem.ParentId, new List<string>());
             }
         
             var itemName = locale[templateId + " Name"];
                 
-            templateDictionary[handbookItem.ParentId].Add(templateId + " | "+itemName);
+            templateDictionary[handbookItem.ParentId].Add("\""+templateId + "\": 0, // "+itemName);
         }
         
-        logger.Success("Category only:");
+        //logger.Success("Category only:");
+        itemStringBuilder.AppendLine("Category only:");
         foreach (var pair in templateDictionary)
         {
             var categoryId = pair.Key;
             var categoryName = locale[categoryId];
             
-            logger.Success(categoryId+" | "+categoryName);
+            //logger.Success(categoryId+" | "+categoryName);
+            itemStringBuilder.AppendLine("\""+categoryId+"\": 0, // "+categoryName);
         }
         
-        logger.Success("\nCategory and items:");
+        //logger.Success("\nCategory and items:");
+        itemStringBuilder.AppendLine("\nCategory and items:");
         foreach (var pair in templateDictionary)
         {
             var categoryId = pair.Key;
@@ -58,13 +80,21 @@ public class DynamicFleaPriceCheatSheetGenerator(
             
             var categoryName = locale[categoryId];
             
-            logger.Success("\n"+categoryId+"\t | "+categoryName);
+            //logger.Success("\n"+categoryId+"\t | "+categoryName);
+            itemStringBuilder.AppendLine("\n//"+categoryId+"\t   "+categoryName);
             
             foreach (var item in items)
             {
-                logger.Success("\t"+item);
+                //logger.Success("\t"+item);
+                itemStringBuilder.AppendLine("\t"+item);
             }
         }
+        
+        var fileInfo = new FileInfo(DynamicFleaPrice.exportPath);
+        fileInfo.Directory?.Create();
+        File.WriteAllText(DynamicFleaPrice.exportPath, itemStringBuilder.ToString(), Encoding.UTF8);
+        
+        logger.Success($"[{DynamicFleaPrice.ModName}] Items/Categories IDs exported: {fileInfo.Name}");
 
         return Task.CompletedTask;
     }

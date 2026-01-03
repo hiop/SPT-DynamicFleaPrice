@@ -17,6 +17,7 @@ public class DynamicFleaPrice(
     public static readonly string ModName = "DynamicFleaPrice";
     private static readonly string _dataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "user", "mods", "DynamicFleaPrice", "Data", "DynamicFleaPriceData.json");
     private static readonly string _configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "user", "mods", "DynamicFleaPrice", "Config", "DynamicFleaPriceConfig.json5");
+    public static readonly string exportPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "user", "mods", "DynamicFleaPrice", "ItemAndCategories.txt");
     
     private DynamicFleaPriceData? _data;
     private DynamicFleaPriceConfig? _config;
@@ -289,6 +290,16 @@ public class DynamicFleaPrice(
     {
         return (bool)_config?.OnlyFoundInRaidForFleaOffers;
     }
+    
+    public string GetItemsAndCategoriesExportLocale()
+    {
+        return _config!.ItemsAndCategoriesExportLocale;
+    }
+    
+    public bool GetItemsAndCategoriesExport()
+    {
+        return (bool)_config!.ItemsAndCategoriesExport;
+    }
 }
 
 public class DynamicFleaPriceData
@@ -302,6 +313,13 @@ public class DynamicFleaPriceData
 
 public class DynamicFleaPriceConfig
 {
+
+    [JsonPropertyName("itemsAndCategoriesExportLocale")]
+    public string ItemsAndCategoriesExportLocale { get; set; } = "en";
+    
+    [JsonPropertyName("itemsAndCategoriesExport")]
+    public bool ItemsAndCategoriesExport { get; set; } = false;
+    
     [JsonPropertyName("onlyFoundInRaidForFleaOffers")]
     public bool OnlyFoundInRaidForFleaOffers { get; set; } = false;
     
